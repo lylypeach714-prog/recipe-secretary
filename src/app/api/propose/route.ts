@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, apiKey } = await req.json();
+    const body = await req.json();
+    const { prompt, apiKey } = body;
+
+    if (!apiKey || !prompt) {
+      return NextResponse.json(
+        { error: { message: "Missing apiKey or prompt" } },
+        { status: 400 }
+      );
+    }
+
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -16,9 +25,22 @@ export async function POST(req: NextRequest) {
         messages: [{ role: "user", content: prompt }],
       }),
     });
-    const data = await res.json();
-    return NextResponse.json(data);
+
+    const text = await res.text();
+
+    try {
+      const data = JSON.parse(text);
+      return NextResponse.json(data);
+    } catch {
+      return NextResponse.json(
+        { error: { message: "Invalid response: " + text.slice(0, 200) } },
+        { status: 500 }
+      );
+    }
   } catch (e) {
-    return NextResponse.json({ error: { message: String(e) } }, { status: 500 });
+    return NextResponse.json(
+      { error: { message: String(e) } },
+      { status: 500 }
+    );
   }
 }
