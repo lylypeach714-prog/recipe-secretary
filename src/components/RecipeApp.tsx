@@ -338,7 +338,9 @@ function AiScreen({ recipes, apiKey, onNeedApiKey }: { recipes: Recipe[]; apiKey
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error?.message || "API error");
       const text = data.content?.map((b: {text?:string}) => b.text||"").join("") || "";
-      const parsed = JSON.parse(text.replace(/```json|```/g,"").trim());
+const cleaned = text.replace(/```json|```/g,"").trim();
+if (!cleaned) throw new Error("AIからの応答が空でした");
+const parsed = JSON.parse(cleaned);
       setResult(parsed);
     } catch(e) { setError(`提案の取得に失敗しました。${ e instanceof Error ? e.message : ""}`); }
     finally { setLoading(false); }
